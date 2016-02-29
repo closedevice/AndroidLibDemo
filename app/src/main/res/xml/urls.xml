@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<url>
+    <Node
+        Key="getWeatherInfo"
+        Expires="300"
+        NetType="get"
+        Url="http://www.weather.com.cn/data/sk/101010100.html"
+        MockClass="sbbic.com.androidlibdemo.mockdata.MockWeatherInfo"
+        />
+</url>
