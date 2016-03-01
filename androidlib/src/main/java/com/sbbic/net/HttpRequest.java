@@ -5,7 +5,7 @@ import android.os.Looper;
 import android.util.Log;
 
 import com.alibaba.fastjson.JSON;
-import com.sbbic.cache.CacheManager;
+import com.sbbic.net.cache.CacheManager;
 import com.sbbic.utils.BaseUtils;
 
 import org.apache.http.HttpResponse;
@@ -26,8 +26,10 @@ import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
 import java.util.List;
 
+
 /**
  * Created by God on 2016/2/29.
+ * http request,just support get,post
  */
 public class HttpRequest implements Runnable {
     private String TAG = HttpRequest.class.getSimpleName();
@@ -75,52 +77,55 @@ public class HttpRequest implements Runnable {
 
         try {
 
-            if (urlData.getNetType().equals(REQUEST_GET)) {
-                StringBuffer paramBuffer = new StringBuffer();
-                if ((parameters != null) && (parameters.size() > 0)) {
-                    sortKeys();
+            switch (urlData.getNetType()) {
+                case REQUEST_GET:
+                    StringBuffer paramBuffer = new StringBuffer();
+                    if ((parameters != null) && (parameters.size() > 0)) {
+                        sortKeys();
 
-                    for (RequestParameter parameter : parameters) {
-                        if (paramBuffer.length() == 0) {
-                            paramBuffer.append(parameter.getName() + "=" + BaseUtils.UrlEncodeUnicode(parameter.getValue()));
-                        } else {
-                            paramBuffer.append("&" + parameter.getName() + "=" + BaseUtils.UrlEncodeUnicode(parameter.getValue()));
+                        for (RequestParameter parameter : parameters) {
+                            if (paramBuffer.length() == 0) {
+                                paramBuffer.append(parameter.getName() + "=" + BaseUtils.UrlEncodeUnicode(parameter.getValue()));
+                            } else {
+                                paramBuffer.append("&" + parameter.getName() + "=" + BaseUtils.UrlEncodeUnicode(parameter.getValue()));
+                            }
+                        }
+
+                        newUrl = url + "?" + paramBuffer.toString();
+                    } else {
+                        newUrl = url;
+                    }
+
+                    if (urlData.getExpires() > 0) {
+                        final String content = CacheManager.getInstance().getCache(newUrl);
+                        Log.d(TAG, "data from cache");
+                        if (content != null) {
+                            handler.post(new Runnable() {
+                                @Override
+                                public void run() {
+                                    requestCallback.onSuccess(content);
+
+                                }
+                            });
+                            return;
                         }
                     }
 
-                    newUrl = url + "?" + paramBuffer.toString();
-                } else {
-                    newUrl = url;
-                }
+                    request = new HttpGet(newUrl);
 
-                if (urlData.getExpires() > 0) {
-                    final String content = CacheManager.getInstance().getCache(newUrl);
-                    Log.d(TAG, "data from cache");
-                    if (content != null) {
-                        handler.post(new Runnable() {
-                            @Override
-                            public void run() {
-                                requestCallback.onSuccess(content);
+                    break;
+                case POST:
+                    if (parameters != null && parameters.size() > 0) {
+                        ArrayList<BasicNameValuePair> list = new ArrayList<>();
+                        for (RequestParameter p : parameters) {
+                            list.add(new BasicNameValuePair(p.getName(), p.getValue()));
 
-                            }
-                        });
-                        return;
+                        }
+                        ((HttpPost) request).setEntity(new UrlEncodedFormEntity(list, HTTP.UTF_8));
                     }
-                }
-
-                request = new HttpGet(newUrl);
-
-            } else if (urlData.getNetType().equals(POST)) {
-                if (parameters != null && parameters.size() > 0) {
-                    ArrayList<BasicNameValuePair> list = new ArrayList<>();
-                    for (RequestParameter p : parameters) {
-                        list.add(new BasicNameValuePair(p.getName(), p.getValue()));
-
-                    }
-                    ((HttpPost) request).setEntity(new UrlEncodedFormEntity(list, HTTP.UTF_8));
-                }
-            } else {
-                return;
+                    break;
+                default:
+                    return;
             }
 
             request.getParams().setParameter(CoreConnectionPNames.CONNECTION_TIMEOUT, 30000);
@@ -155,14 +160,12 @@ public class HttpRequest implements Runnable {
                             handler.post(new Runnable() {
                                 @Override
                                 public void run() {
-                                    HttpRequest.this.requestCallback.onSuccess(strREsponse + "");
-//                                HttpRequest.this.requestCallback.onSuccess(responseInJson.getResult());
+                                    HttpRequest.this.requestCallback.onSuccess(responseInJson.getResult());
 
                                 }
                             });
                         }
 
-//                    JSON
                     } else {
                         handleNetworkError("net error");
                     }

@@ -1,17 +1,18 @@
-package com.sbbic.cache;
+package com.sbbic.net.cache;
 
 import java.io.Serializable;
 
 /**
  * Created by God on 2016/2/29.
+ *cache object
  */
-public class CacheItem implements Serializable{
+public class CacheObject implements Serializable {
 
     private long timeStamp=0L;
     private String data;
     private String key;
 
-    public CacheItem(String md5Key, String data, long expiredTime) {
+    public CacheObject(String md5Key, String data, long expiredTime) {
         this.data=data;
         this.key=md5Key;
         this.timeStamp = System.currentTimeMillis() + expiredTime;

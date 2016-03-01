@@ -1,4 +1,4 @@
-package com.sbbic.cache;
+package com.sbbic.net.cache;
 
 import android.os.Environment;
 
@@ -8,9 +8,11 @@ import java.io.File;
 
 /**
  * Created by God on 2016/2/29.
+ *
+ * net cache manager,just for get-request
  */
 public class CacheManager {
-    public static final String APP_CACHE_PATH = Environment.getDownloadCacheDirectory().getPath()
+    public static final String APP_CACHE_PATH = Environment.getExternalStorageDirectory().getPath()
             + "/androidcache/appdata/";
     public static final long SCCARD_MIN_SPACE=1020*1024*10;
 
@@ -45,9 +47,9 @@ public class CacheManager {
     }
 
     public String getCache(final String key) {
-        String md5Key = BaseUtils.getMd5(key);
+        String md5Key = BaseUtils.getMD5(key);
         if (isExist(md5Key)) {
-            CacheItem item = getFromCache(md5Key);
+            CacheObject item = getFromCache(md5Key);
             if (item != null) {
                 return item.getData();
             }
@@ -56,8 +58,8 @@ public class CacheManager {
     }
 
     public void putCache(final String key, final String data, long expiredTime) {
-        String md5Key = BaseUtils.getMd5(key);
-        CacheItem item = new CacheItem(md5Key, data, expiredTime);
+        String md5Key = BaseUtils.getMD5(key);
+        CacheObject item = new CacheObject(md5Key, data, expiredTime);
         if (BaseUtils.getSDSize() > SCCARD_MIN_SPACE) {
             BaseUtils.saveObject(APP_CACHE_PATH+item.getKey()
                     ,item);
@@ -65,11 +67,11 @@ public class CacheManager {
     }
 
 
-    private CacheItem getFromCache(String md5Key) {
-        CacheItem cacheItem=null;
+    private CacheObject getFromCache(String md5Key) {
+        CacheObject cacheItem = null;
         Object o = BaseUtils.restoreObject(APP_CACHE_PATH + md5Key);
         if (o != null) {
-            cacheItem= (CacheItem) o;
+            cacheItem = (CacheObject) o;
         }
         if (cacheItem == null) {
             return null;
@@ -88,8 +90,8 @@ public class CacheManager {
         return file.exists();
     }
     public void clearAllData() {
-        File file = null;
-        File[] files=null;
+        File file;
+        File[] files;
         if (BaseUtils.sdcardMounted()) {
             file = new File(APP_CACHE_PATH);
             files = file.listFiles();

@@ -1,5 +1,6 @@
 package com.sbbic.utils;
 
+import android.content.Context;
 import android.os.Environment;
 import android.os.StatFs;
 
@@ -84,51 +85,7 @@ public class BaseUtils {
         return false;
     }
 
-    // ----------------------------------------------------------------------------------------------------------------------------
-    // MD5相关函数
-    private static final char HEX_DIGITS[] = { '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'a', 'b', 'c', 'd',
-            'e', 'f'                      };
 
-    /**
-     * MD5运算
-     *
-     * @param s
-     * @return String 返回密文
-     */
-    public static String getMd5(final String s)
-    {
-        try
-        {
-            // Create MD5 Hash
-            final MessageDigest digest = java.security.MessageDigest.getInstance("MD5");
-            digest.update(s.trim().getBytes());
-            final byte messageDigest[] = digest.digest();
-            return BaseUtils.toHexString(messageDigest);
-        }
-        catch (final NoSuchAlgorithmException e)
-        {
-            e.printStackTrace();
-        }
-        return s;
-    }
-
-    /**
-     * 转换为十六进制字符串
-     *
-     * @param b
-     *            byte数组
-     * @return String byte数组处理后字符串
-     */
-    public static String toHexString(final byte[] b)
-    {// String to byte
-        final StringBuilder sb = new StringBuilder(b.length * 2);
-        for (final byte element : b)
-        {
-            sb.append(BaseUtils.HEX_DIGITS[(element & 0xf0) >>> 4]);
-            sb.append(BaseUtils.HEX_DIGITS[element & 0x0f]);
-        }
-        return sb.toString();
-    }
 
     /**
      * 检查是否安装了sd卡
@@ -158,6 +115,12 @@ public class BaseUtils {
         return localStatFs.getAvailableBlocks() * blockSize;
     }
 
+    /**
+     * 保存对象
+     *
+     * @param path
+     * @param saveObject
+     */
     public static final void saveObject(String path, Object saveObject) {
         FileOutputStream fos = null;
         ObjectOutputStream oos = null;
@@ -184,6 +147,12 @@ public class BaseUtils {
         }
     }
 
+    /**
+     * 恢复对象
+     *
+     * @param path
+     * @return
+     */
     public static final Object restoreObject(String path) {
         FileInputStream fis = null;
         ObjectInputStream ois = null;
@@ -216,6 +185,58 @@ public class BaseUtils {
                 e.printStackTrace();
             }
         }
-        return object;
+        return null;
+    }
+
+
+    /**
+     * 获取磁盘缓存目录
+     *
+     * @param context
+     * @param dataType
+     * @return
+     */
+    public static File getDiskCacheDir(Context context, String dataType) {
+        String dirPath;
+        File cacheFile;
+        if (Environment.MEDIA_MOUNTED.equals(Environment.getExternalStorageState()) || !Environment.isExternalStorageRemovable()) {
+            dirPath = context.getExternalCacheDir().getPath();
+        } else {
+            dirPath = context.getCacheDir().getPath();
+        }
+
+        cacheFile = new File(dirPath + File.separator + dataType);
+        return cacheFile;
+    }
+
+    /**
+     * 获取MD5
+     *
+     * @param s
+     * @return
+     */
+    public static String getMD5(String s) {
+        String cacheKey;
+        try {
+            MessageDigest mDigest = MessageDigest.getInstance("MD5");
+            mDigest.update(s.getBytes());
+            cacheKey = bytesToHexString(mDigest.digest());
+        } catch (NoSuchAlgorithmException e) {
+//            e.printStackTrace();
+            cacheKey = String.valueOf(s.hashCode());
+        }
+        return cacheKey;
+    }
+
+    private static String bytesToHexString(byte[] bytes) {
+        StringBuilder sb = new StringBuilder();
+        for (byte aByte : bytes) {
+            String hex = Integer.toHexString(0xFF & aByte);
+            if (hex.length() == 1) {
+                sb.append(0);
+            }
+            sb.append(hex);
+        }
+        return sb.toString();
     }
 }
